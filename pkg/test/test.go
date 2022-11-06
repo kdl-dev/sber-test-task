@@ -15,9 +15,9 @@ import (
 )
 
 type Test struct {
-	sid              *http.Cookie
-	host             string
-	nextQuestionPath string
+	sid             *http.Cookie
+	host            string
+	questionURLPath string
 }
 
 func (t *Test) SID() *http.Cookie {
@@ -36,7 +36,7 @@ func NewTest(addr string) (*Test, error) {
 	newTest.host = addr
 	newTest.sid = resp.Cookies()[0]
 
-	newTest.nextQuestionPath, err = parser.GetPathToSartTest(resp.Body)
+	newTest.questionURLPath, err = parser.GetPathToSartTest(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func NewTest(addr string) (*Test, error) {
 }
 
 func (t *Test) SolveTest() (string, error) {
-	resp, err := web.SendRequest("Get", t.host+t.nextQuestionPath, &web.HttpHeaders{
+	resp, err := web.SendRequest("Get", t.host+t.questionURLPath, &web.HttpHeaders{
 		Cookie: t.sid,
 	}, nil)
 	if err != nil {
@@ -61,8 +61,8 @@ func (t *Test) SolveTest() (string, error) {
 	}
 
 	var QuestionIndex int
-	for {
 
+	for {
 		answers, err := getRightAnswers(body)
 		if err != nil {
 			return "", err
@@ -76,14 +76,14 @@ func (t *Test) SolveTest() (string, error) {
 		log.Printf("Question #%d SUCCESS\n", QuestionIndex)
 		global.PrintVerboseInfo(global.CLI_Border)
 
-		resp, err = web.SendRequest("POST", t.host+t.nextQuestionPath, &web.HttpHeaders{
+		resp, err = web.SendRequest("POST", t.host+t.questionURLPath, &web.HttpHeaders{
 			Cookie: t.sid, ContentType: os.Getenv("RESPONSE_CONTENT_TYPE")}, answers)
 		if err != nil {
 			return "", err
 		}
 		defer resp.Body.Close()
 
-		t.nextQuestionPath = resp.Request.URL.Path
+		t.questionURLPath = resp.Request.URL.Path
 
 		body, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
@@ -93,7 +93,6 @@ func (t *Test) SolveTest() (string, error) {
 }
 
 func getRightAnswers(body []byte) (io.Reader, error) {
-
 	userInputs, err := parser.ParseUserInputs(body)
 	if err != nil {
 		return nil, err
@@ -116,28 +115,22 @@ func getLongestValueFromUserInputs(userInputs parser.UserInputs) []web.HttpBody 
 	var httpBody []web.HttpBody
 
 	texts := userInputs.TextInput
-
 	if texts != nil {
 		global.PrintVerboseInfo("Text input type:\n")
+		httpBody = append(httpBody, getLongestValueFromUserInput(texts)...)
 	}
-
-	httpBody = append(httpBody, getLongestValueFromUserInput(texts)...)
 
 	selects := userInputs.SelectInput
-
 	if selects != nil {
 		global.PrintVerboseInfo("Select input type:\n")
+		httpBody = append(httpBody, getLongestValueFromUserInput(selects)...)
 	}
-
-	httpBody = append(httpBody, getLongestValueFromUserInput(selects)...)
 
 	radios := userInputs.RadioInput
-
 	if radios != nil {
 		global.PrintVerboseInfo("Radios input type:\n")
+		httpBody = append(httpBody, getLongestValueFromUserInput(radios)...)
 	}
-
-	httpBody = append(httpBody, getLongestValueFromUserInput(radios)...)
 
 	if texts == nil && selects == nil && radios == nil {
 		return nil
