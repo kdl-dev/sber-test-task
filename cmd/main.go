@@ -21,7 +21,7 @@ var isSecureConn bool
 func init() {
 	flag.StringVar(&addr, "u", "", "URL of the test start.")
 	flag.BoolVar(&isSecureConn, "s", false, "Secure remote host.")
-	flag.BoolVar(&global.IsVerbose, "v", false, "Verbose information about the test result")
+	flag.BoolVar(&global.IsVerbose, "v", false, "Verbose information about the test result.")
 	flag.Parse()
 
 	if addr == "" {
