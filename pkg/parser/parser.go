@@ -8,6 +8,22 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+const (
+	TAG_BODY   = "body"
+	TAG_A      = "a"
+	TAG_SELECT = "select"
+	TAG_OPTION = "option"
+	TAG_H1     = "h1"
+
+	ATTR_HREF  = "href"
+	ATTR_VALUE = "value"
+	ATTR_NAME  = "name"
+	ATTR_TYPE  = "type"
+
+	INPUT_TYPE_RADIO = "radio"
+	INPUT_TYPE_TEXT  = "text"
+)
+
 type UserInput struct {
 	Name    string
 	Options []Option
@@ -30,12 +46,12 @@ func GetPathToSartTest(body io.Reader) (string, error) {
 		return "", err
 	}
 
-	path, isExists := doc.Find("body").Find("a").Attr("href")
+	urlPath, isExists := doc.Find(TAG_BODY).Find(TAG_A).Attr(ATTR_HREF)
 	if !isExists {
-		return "", fmt.Errorf("href attribute for tag a not found")
+		return "", fmt.Errorf("href attribute for tag 'a' not found")
 	}
 
-	return path, nil
+	return urlPath, nil
 }
 
 func ParseSelects(body io.Reader) ([]UserInput, error) {
@@ -46,15 +62,16 @@ func ParseSelects(body io.Reader) ([]UserInput, error) {
 		return nil, err
 	}
 
-	doc.Find("select").Each(func(i int, s *goquery.Selection) {
+	doc.Find(TAG_SELECT).Each(func(i int, s *goquery.Selection) {
 		var opts []Option
-		s.Find("option").Each(func(j int, s *goquery.Selection) {
+		s.Find(TAG_OPTION).Each(func(j int, s *goquery.Selection) {
 			opts = append(opts, Option{})
-			opts[j].Value, _ = s.Attr("value")
+			opts[j].Value, _ = s.Attr(ATTR_VALUE)
 			opts[j].Content = s.Text()
 		})
+
 		selectInputs = append(selectInputs, UserInput{})
-		selectInputs[i].Name, _ = s.Attr("name")
+		selectInputs[i].Name, _ = s.Attr(ATTR_NAME)
 
 		selectInputs[i].Options = append(selectInputs[i].Options, opts...)
 	})
@@ -72,21 +89,23 @@ func ParseRadios(body io.Reader) ([]UserInput, error) {
 
 	index := -1
 	doc.Find("input").Each(func(i int, s *goquery.Selection) {
-		inputType, _ := s.Attr("type")
-		if inputType == "radio" {
-			inputRadioName, _ := s.Attr("name")
 
-			if index == -1 || inputRadioName != selectInputs[index].Name {
-				selectInputs = append(selectInputs, UserInput{Name: inputRadioName})
-				index++
-			}
-
-			inputRadioValue, _ := s.Attr("value")
-			selectInputs[index].Options = append(selectInputs[index].Options, Option{
-				Value:   inputRadioValue,
-				Content: inputRadioValue,
-			})
+		if inputType, _ := s.Attr(ATTR_TYPE); inputType != INPUT_TYPE_RADIO {
+			return
 		}
+
+		inputRadioName, _ := s.Attr(ATTR_NAME)
+
+		if index == -1 || inputRadioName != selectInputs[index].Name {
+			selectInputs = append(selectInputs, UserInput{Name: inputRadioName})
+			index++
+		}
+
+		inputRadioValue, _ := s.Attr(ATTR_VALUE)
+		selectInputs[index].Options = append(selectInputs[index].Options, Option{
+			Value:   inputRadioValue,
+			Content: inputRadioValue,
+		})
 	})
 
 	return selectInputs, nil
@@ -101,13 +120,15 @@ func ParseTextField(body io.Reader) ([]UserInput, error) {
 	}
 
 	doc.Find("input").Each(func(i int, s *goquery.Selection) {
-		if inputType, _ := s.Attr("type"); inputType == "text" {
-			name, _ := s.Attr("name")
-
-			selectInputs = append(selectInputs, UserInput{
-				Name: name,
-			})
+		if inputType, _ := s.Attr("type"); inputType != INPUT_TYPE_TEXT {
+			return
 		}
+
+		name, _ := s.Attr("name")
+
+		selectInputs = append(selectInputs, UserInput{
+			Name: name,
+		})
 	})
 
 	return selectInputs, nil
@@ -142,6 +163,5 @@ func ParseSuccessMsg(body []byte) (string, error) {
 		return "", err
 	}
 
-	return doc.Find("body").Find("h1").Text(), nil
-
+	return doc.Find(TAG_BODY).Find(TAG_H1).Text(), nil
 }
