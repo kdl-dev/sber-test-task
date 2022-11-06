@@ -178,6 +178,8 @@ func calcLongestValue(arr []parser.Option) *parser.Option {
 		}
 	}
 
+	global.PrintVerboseInfo("Longer: %s\n\n", longer.Content)
+
 	return &longer
 }
 
