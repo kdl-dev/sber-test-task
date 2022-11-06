@@ -40,7 +40,7 @@ func init() {
 		log.Fatal(err.Error())
 	}
 
-	web.ContentType = os.Getenv("RESPONSE_CONTENT_TYPE")
+	web.ContentType = os.Getenv("REQUEST_CONTENT_TYPE")
 	if web.ContentType == "" {
 		log.Fatal("content type not provided")
 	}
