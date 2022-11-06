@@ -47,6 +47,7 @@ func main() {
 
 	log.Printf("Test start\n\n")
 	global.PrintVerboseInfo(global.CLI_Border)
+
 	successMsg, err := newTest.SolveTest()
 	if err != nil {
 		log.Fatalf("%v\n", err)
@@ -55,4 +56,5 @@ func main() {
 	log.Printf("%s\n\n", successMsg)
 	global.PrintVerboseInfo(global.CLI_Border)
 	log.Println("Test finish")
+
 }
