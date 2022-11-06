@@ -13,6 +13,7 @@ const (
 	TAG_A      = "a"
 	TAG_SELECT = "select"
 	TAG_OPTION = "option"
+	TAG_INPUT  = "input"
 	TAG_H1     = "h1"
 
 	ATTR_HREF  = "href"
@@ -70,9 +71,9 @@ func ParseSelects(body io.Reader) ([]UserInput, error) {
 			opts[j].Content = s.Text()
 		})
 
+		// Add info about select
 		selectInputs = append(selectInputs, UserInput{})
 		selectInputs[i].Name, _ = s.Attr(ATTR_NAME)
-
 		selectInputs[i].Options = append(selectInputs[i].Options, opts...)
 	})
 
@@ -80,7 +81,7 @@ func ParseSelects(body io.Reader) ([]UserInput, error) {
 }
 
 func ParseRadios(body io.Reader) ([]UserInput, error) {
-	var selectInputs []UserInput
+	var radioInputs []UserInput
 
 	doc, err := goquery.NewDocumentFromReader(body)
 	if err != nil {
@@ -88,7 +89,7 @@ func ParseRadios(body io.Reader) ([]UserInput, error) {
 	}
 
 	index := -1
-	doc.Find("input").Each(func(i int, s *goquery.Selection) {
+	doc.Find(TAG_INPUT).Each(func(i int, s *goquery.Selection) {
 
 		if inputType, _ := s.Attr(ATTR_TYPE); inputType != INPUT_TYPE_RADIO {
 			return
@@ -96,42 +97,45 @@ func ParseRadios(body io.Reader) ([]UserInput, error) {
 
 		inputRadioName, _ := s.Attr(ATTR_NAME)
 
-		if index == -1 || inputRadioName != selectInputs[index].Name {
-			selectInputs = append(selectInputs, UserInput{Name: inputRadioName})
+		// If this is the first counter element "radio" (index == -1)
+		// or the current parsed name is not the name of the previous added
+		// element "radio", then need to add a new element "radio" to the slice.
+		if index == -1 || inputRadioName != radioInputs[index].Name {
+			radioInputs = append(radioInputs, UserInput{Name: inputRadioName})
 			index++
 		}
 
 		inputRadioValue, _ := s.Attr(ATTR_VALUE)
-		selectInputs[index].Options = append(selectInputs[index].Options, Option{
+		radioInputs[index].Options = append(radioInputs[index].Options, Option{
 			Value:   inputRadioValue,
 			Content: inputRadioValue,
 		})
 	})
 
-	return selectInputs, nil
+	return radioInputs, nil
 }
 
 func ParseTextField(body io.Reader) ([]UserInput, error) {
-	var selectInputs []UserInput
+	var textInputs []UserInput
 
 	doc, err := goquery.NewDocumentFromReader(body)
 	if err != nil {
 		return nil, err
 	}
 
-	doc.Find("input").Each(func(i int, s *goquery.Selection) {
-		if inputType, _ := s.Attr("type"); inputType != INPUT_TYPE_TEXT {
+	doc.Find(TAG_INPUT).Each(func(i int, s *goquery.Selection) {
+		if inputType, _ := s.Attr(ATTR_TYPE); inputType != INPUT_TYPE_TEXT {
 			return
 		}
 
-		name, _ := s.Attr("name")
+		name, _ := s.Attr(ATTR_NAME)
 
-		selectInputs = append(selectInputs, UserInput{
+		textInputs = append(textInputs, UserInput{
 			Name: name,
 		})
 	})
 
-	return selectInputs, nil
+	return textInputs, nil
 }
 
 func ParseUserInputs(body []byte) (*UserInputs, error) {
@@ -157,6 +161,7 @@ func ParseUserInputs(body []byte) (*UserInputs, error) {
 	}, nil
 }
 
+// Parse last html (Test result)
 func ParseSuccessMsg(body []byte) (string, error) {
 	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(body))
 	if err != nil {

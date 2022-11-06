@@ -5,10 +5,12 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 	"github.com/kdl-dev/sber-test-task/pkg/global"
 	"github.com/kdl-dev/sber-test-task/pkg/test"
+	"github.com/kdl-dev/sber-test-task/pkg/web"
 )
 
 var addr string
@@ -36,6 +38,11 @@ func init() {
 
 	if err := godotenv.Load(".env"); err != nil {
 		log.Fatal(err.Error())
+	}
+
+	web.ContentType = os.Getenv("RESPONSE_CONTENT_TYPE")
+	if web.ContentType == "" {
+		log.Fatal("content type not provided")
 	}
 }
 

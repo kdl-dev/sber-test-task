@@ -77,7 +77,7 @@ func (t *Test) SolveTest() (string, error) {
 		global.PrintVerboseInfo(global.CLI_Border)
 
 		resp, err = web.SendRequest("POST", t.host+t.questionURLPath, &web.HttpHeaders{
-			Cookie: t.sid, ContentType: os.Getenv("RESPONSE_CONTENT_TYPE")}, answers)
+			Cookie: t.sid, ContentType: web.ContentType}, answers)
 		if err != nil {
 			return "", err
 		}
@@ -132,6 +132,7 @@ func getLongestValueFromUserInputs(userInputs parser.UserInputs) []web.HttpBody 
 		httpBody = append(httpBody, getLongestValueFromUserInput(radios)...)
 	}
 
+	// If the parser did not find any input element
 	if texts == nil && selects == nil && radios == nil {
 		return nil
 	}
@@ -147,11 +148,12 @@ func getLongestValueFromUserInput(userInput []parser.UserInput) []web.HttpBody {
 	for _, input := range userInput {
 		printUserInput(&input)
 
+		// For selects and radios
 		if input.Options != nil {
 			longer = calcLongestValue(input.Options)
 			value = longer.Value
 		} else {
-			value = os.Getenv("TEXT_WORD")
+			value = os.Getenv("TEXT_WORD") // For text field
 		}
 
 		httpBody = append(httpBody, web.HttpBody{

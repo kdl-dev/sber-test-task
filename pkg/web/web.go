@@ -11,6 +11,7 @@ type HttpBody struct {
 }
 
 var client = &http.Client{}
+var ContentType string
 
 type HttpHeaders struct {
 	Cookie      *http.Cookie
