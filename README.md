@@ -14,6 +14,6 @@
 ### Flags
 * ```-u``` - URL of the test start (example ```-u 185.204.3.165```).
 * ```-v``` - Verbose information about the test result (Just try).
-* ```-s``` - If secure connection
+* ```-s``` - If secure connection.
 
 ---
